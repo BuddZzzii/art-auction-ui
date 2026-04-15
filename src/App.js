@@ -6,12 +6,13 @@ import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Pages - Using the Fixed Uppercase "Pages" folder
-import BrowsePage from './Pages/BrowsePage'; 
-import LoginPage from './Pages/LoginPage';
-import ArtworkDetailsPage from './Pages/ArtworkDetailsPage';
-import ProfilePage from './Pages/ProfilePage';
-import NotFoundPage from './Pages/NotFoundPage';
+// Pages - Using the lowercase "pages" folder
+import BrowsePage from './pages/BrowsePage'; 
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage'; // Added the Register import
+import ArtworkDetailsPage from './pages/ArtworkDetailsPage';
+import ProfilePage from './pages/ProfilePage';
+import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             {/* PUBLIC ROUTES */}
             <Route path="/" element={<BrowsePage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} /> {/* Added the Register route */}
 
             {/* PROTECTED ROUTES */}
             <Route 
