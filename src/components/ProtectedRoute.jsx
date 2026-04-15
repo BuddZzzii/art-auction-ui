@@ -1,19 +1,23 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom'; // Add useLocation
+import { useAuth } from '../context/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
-  // ⚠️ FAKE AUTHENTICATION TOGGLE
-  // Change this to 'true' to pretend you are logged in.
-  // Change this to 'false' to test the Bouncer kicking you out.
-  const isLoggedIn = true; 
+  const { user } = useAuth();
+  const location = useLocation(); // This remembers where the user was trying to go
 
-  if (!isLoggedIn) {
-    // The user has no key. Instantly teleport them to the Login screen.
-    // 'replace' means they can't even use the browser's Back button to sneak back in.
-    return <Navigate to="/login" replace />;
+  if (!user) {
+    // We pass a 'state' object containing our message
+    return <Navigate 
+      to="/login" 
+      replace 
+      state={{ 
+        message: "You need to be logged in to view artwork details and place bids! 🎨",
+        from: location 
+      }} 
+    />;
   }
 
-  // The user has the key! Render whatever page they were trying to access.
   return children;
 };
 

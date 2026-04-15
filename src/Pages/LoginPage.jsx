@@ -1,36 +1,55 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Tune into the Brain
+import { Link, useNavigate, useLocation } from 'react-router-dom'; // 1. Added useLocation
+import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth(); // Grab the login tool
+  const location = useLocation(); // 2. Hook into the current location/state
+  const { login } = useAuth();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // 3. Extract the message if it exists
+  const infoMessage = location.state?.message;
 
   const handleLogin = (e) => {
     e.preventDefault();
     
-    // 1. Fake Authentication for now
     console.log("Attempting login with:", { email, password });
     
-    // 2. Save the token to browser memory
     const fakeToken = "abc.123.vip.token";
     localStorage.setItem('token', fakeToken);
 
-    // 3. Update the Global Brain
-    // We take the first part of the email (before @) as the name
     const userName = email.split('@')[0]; 
     login({ name: userName, email: email });
 
-    // 4. Teleport the user to the Showroom
-    navigate('/');
+    // 4. SMART REDIRECT: Go back to where you were, or home if you came here normally
+    const origin = location.state?.from?.pathname || '/';
+    navigate(origin);
   };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
+        
+        {/* 🚀 THE MESSAGE BANNER: Only shows if the bouncer sent you here */}
+        {infoMessage && (
+          <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded shadow-sm animate-pulse">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <span className="text-blue-500">ℹ️</span>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-blue-700 font-medium">
+                  {infoMessage}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <h2 className="text-center text-3xl font-extrabold text-slate-900">
           Sign in to ArtAuction
         </h2>
       </div>
@@ -45,9 +64,7 @@ const LoginPage = () => {
               <div className="mt-1">
                 <input
                   id="email"
-                  name="email"
                   type="email"
-                  autoComplete="email"
                   required
                   className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
                   value={email}
@@ -63,9 +80,7 @@ const LoginPage = () => {
               <div className="mt-1">
                 <input
                   id="password"
-                  name="password"
                   type="password"
-                  autoComplete="current-password"
                   required
                   className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
                   value={password}

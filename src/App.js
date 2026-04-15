@@ -1,23 +1,53 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import Navbar from './components/Navbar';
 
-// 1. IMPORT THE REAL PAGES (Delete the "const Home" and "const Login" lines)
+// Components
+import Navbar from './components/Navbar';
+import ProtectedRoute from './components/ProtectedRoute';
+
+// Pages
 import BrowsePage from './Pages/BrowsePage'; 
 import LoginPage from './Pages/LoginPage';
-// import RegisterPage from './Pages/RegisterPage'; // Add this when you're ready!
+import ArtworkDetailsPage from './Pages/ArtworkDetailsPage';
+import ProfilePage from './Pages/ProfilePage';
+import NotFoundPage from './Pages/NotFoundPage'; // The new 404 room!
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-slate-800">
+        {/* Main Layout Container */}
+        <div className="min-h-screen bg-slate-50">
           <Navbar />
+          
           <Routes>
-            {/* 2. USE THE REAL COMPONENTS HERE */}
+            {/* PUBLIC ROUTES: Anyone can visit these */}
             <Route path="/" element={<BrowsePage />} />
             <Route path="/login" element={<LoginPage />} />
+
+            {/* PROTECTED ROUTES: The Bouncer (ProtectedRoute) checks for ID cards */}
+            <Route 
+              path="/artwork/:id" 
+              element={
+                <ProtectedRoute>
+                  <ArtworkDetailsPage />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* 🚩 THE 404 WILDCARD: This catches any URL that isn't listed above.
+                It MUST stay at the very bottom of the list! */}
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </div>
       </Router>
