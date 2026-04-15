@@ -12,7 +12,7 @@ const ProtectedRoute = ({ children }) => {
       to="/login" 
       replace 
       state={{ 
-        message: "You need to be logged in to view artwork details and place bids! 🎨",
+        message: "You need to be logged in to view artwork details and place bids! ",
         from: location 
       }} 
     />;
