@@ -1,55 +1,31 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom'; // 1. Added useLocation
-import { useAuth } from '../context/AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const location = useLocation(); // 2. Hook into the current location/state
-  const { login } = useAuth();
-  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
-  // 3. Extract the message if it exists
-  const infoMessage = location.state?.message;
 
   const handleLogin = (e) => {
     e.preventDefault();
     
+    // Fake Authentication for now until .NET is connected
     console.log("Attempting login with:", { email, password });
     
+    // 1. We pretend we got a VIP token from the backend
     const fakeToken = "abc.123.vip.token";
+    
+    // 2. Save it to the browser's memory
     localStorage.setItem('token', fakeToken);
-
-    const userName = email.split('@')[0]; 
-    login({ name: userName, email: email });
-
-    // 4. SMART REDIRECT: Go back to where you were, or home if you came here normally
-    const origin = location.state?.from?.pathname || '/';
-    navigate(origin);
+    
+    // 3. Teleport the user directly to the Showroom!
+    navigate('/');
   };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        
-        {/* 🚀 THE MESSAGE BANNER: Only shows if the bouncer sent you here */}
-        {infoMessage && (
-          <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded shadow-sm animate-pulse">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <span className="text-blue-500">ℹ️</span>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-blue-700 font-medium">
-                  {infoMessage}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <h2 className="text-center text-3xl font-extrabold text-slate-900">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
           Sign in to ArtAuction
         </h2>
       </div>
@@ -64,7 +40,9 @@ const LoginPage = () => {
               <div className="mt-1">
                 <input
                   id="email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   required
                   className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
                   value={email}
@@ -80,7 +58,9 @@ const LoginPage = () => {
               <div className="mt-1">
                 <input
                   id="password"
+                  name="password"
                   type="password"
+                  autoComplete="current-password"
                   required
                   className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
                   value={password}
@@ -98,6 +78,7 @@ const LoginPage = () => {
               </button>
             </div>
             
+            {/* THE NEW TWO-WAY DOOR */}
             <div className="text-center mt-4 border-t border-slate-200 pt-4">
               <Link to="/register" className="text-sm text-amber-600 hover:text-amber-500 font-medium">
                 Don't have an account? Sign up here.
