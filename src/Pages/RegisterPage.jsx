@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -9,31 +10,47 @@ const RegisterPage = () => {
     lastName: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 'Buyer' 
   });
 
   const [showPassword, setShowPassword] = useState(false);
   const [showToast, setShowToast] = useState(false);
-  
-  // NEW: State to hold our active error messages
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState(''); 
 
+  // ⚡ NEW: The Microsoft-Grade Password Checker
   const getPasswordStrength = (pass) => {
     if (pass.length === 0) return { text: '', color: '' };
     if (pass.length < 8) return { text: 'Password must be at least 8 characters.', color: 'text-red-500' };
-    if (/^[a-zA-Z]+$/.test(pass) || /^[0-9]+$/.test(pass)) {
-      return { text: 'Weak: Add numbers or symbols.', color: 'text-amber-500' };
+    
+    const hasLower = /[a-z]/.test(pass);
+    const hasUpper = /[A-Z]/.test(pass);
+    const hasNumber = /\d/.test(pass);
+    const hasSpecial = /[^A-Za-z0-9]/.test(pass); // Checks for anything that isn't a letter or number
+
+    if (!hasLower || !hasUpper || !hasNumber || !hasSpecial) {
+      return { 
+        text: 'Weak: Must include uppercase, lowercase, number, and special character (!@#$).', 
+        color: 'text-amber-500' 
+      };
     }
-    return { text: 'Strong password.', color: 'text-green-500' };
+    
+    return { text: 'Strong password. Ready to go!', color: 'text-green-500' };
   };
 
   const strength = getPasswordStrength(formData.password);
 
+  // ⚡ NEW: Dynamic border colors based on the strict strength meter
   let passwordBorder = "border-slate-300 focus:border-amber-500";
   if (formData.password.length > 0) {
-    passwordBorder = formData.password.length >= 8 
-      ? "border-green-500 focus:ring-green-500" 
-      : "border-red-500 focus:ring-red-500";
+    if (strength.color === 'text-green-500') {
+      passwordBorder = "border-green-500 focus:ring-green-500";
+    } else if (strength.color === 'text-amber-500') {
+      passwordBorder = "border-amber-500 focus:ring-amber-500";
+    } else {
+      passwordBorder = "border-red-500 focus:ring-red-500";
+    }
   }
 
   const handleChange = (e) => {
@@ -46,46 +63,63 @@ const RegisterPage = () => {
     
     setFormData({ ...formData, [name]: finalValue });
     
-    // As soon as the user starts typing in a box, clear the red error for that box!
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
-    }
+    if (errors[name]) setErrors({ ...errors, [name]: '' });
+    if (serverError) setServerError('');
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     let newErrors = {};
+    setServerError(''); 
 
-    // 1. Check if passwords match
+    // ⚡ NEW: Stop them before they hit the server if the password isn't green
+    if (strength.color !== 'text-green-500') {
+      newErrors.password = "Please meet all password requirements before registering.";
+    }
+
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match. Please try again.";
     }
-    
-    // 2. Check if password is long enough
-    if (formData.password.length < 8) {
-      newErrors.password = "Your password must be at least 8 characters.";
-    }
 
-    // If we found ANY errors, stop the form and display the red text
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return; 
     }
 
-    // If everything is perfect, trigger the success flow!
-    console.log("Sending to Database:", formData);
-    setShowToast(true);
-    
-    // Wait 3.5 seconds so they can read the new message, then teleport
-    setTimeout(() => {
-      navigate('/login');
-    }, 3500);
+    try {
+      const response = await axios.post('http://localhost:5000/api/auth/register', {
+        username: `${formData.firstName}${formData.lastName}`, 
+        email: formData.email,
+        password: formData.password,
+        role: formData.role 
+      });
+
+      setShowToast(true);
+      
+      setTimeout(() => {
+        navigate('/login', { 
+          state: { message: "Registration successful! Please sign in." } 
+        });
+      }, 3500);
+
+    } catch (err) {
+      console.error("Registration failed:", err);
+      const backendErrors = err.response?.data?.errors;
+      
+      if (Array.isArray(backendErrors)) {
+        setServerError(backendErrors.join(" "));
+      } else if (typeof backendErrors === 'object' && backendErrors !== null) {
+        const errorMessages = Object.values(backendErrors).flat();
+        setServerError(errorMessages.join(" "));
+      } else {
+        setServerError(err.response?.data?.message || "Registration failed. Please try again.");
+      }
+    }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       
-      {/* THE UPGRADED TOAST NOTIFICATION */}
       {showToast && (
         <div className="absolute top-10 right-10 md:right-10 left-10 md:left-auto bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl animate-bounce transition-all z-50">
           <p className="text-lg font-extrabold flex items-center gap-2">
@@ -103,10 +137,53 @@ const RegisterPage = () => {
             Create an Account
           </h2>
         </div>
+
+        {serverError && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 shadow-md mt-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-700 font-medium">{serverError}</p>
+              </div>
+            </div>
+          </div>
+        )}
         
         <form className="mt-8 space-y-6" onSubmit={handleRegister}>
           <div className="space-y-4">
             
+            <div>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">I want to register as a:</label>
+              <div className="flex gap-4 p-1 bg-slate-100 rounded-lg">
+                <label className={`flex-1 text-center py-2 px-4 rounded-md cursor-pointer transition-all text-sm font-medium ${formData.role === 'Buyer' ? 'bg-white shadow text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                  <input
+                    type="radio"
+                    name="role"
+                    value="Buyer"
+                    checked={formData.role === 'Buyer'}
+                    onChange={handleChange}
+                    className="hidden"
+                  />
+                  Buyer
+                </label>
+                <label className={`flex-1 text-center py-2 px-4 rounded-md cursor-pointer transition-all text-sm font-medium ${formData.role === 'Artist' ? 'bg-white shadow text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                  <input
+                    type="radio"
+                    name="role"
+                    value="Artist"
+                    checked={formData.role === 'Artist'}
+                    onChange={handleChange}
+                    className="hidden"
+                  />
+                  Artist
+                </label>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-slate-700">First Name</label>
@@ -151,7 +228,7 @@ const RegisterPage = () => {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   required
-                  className={`appearance-none rounded block w-full pl-3 pr-16 py-2 border text-slate-900 focus:outline-none sm:text-sm transition-colors ${errors.password ? 'border-red-500 focus:ring-red-500' : passwordBorder}`}
+                  className={`appearance-none rounded block w-full pl-3 pr-16 py-2 border text-slate-900 focus:outline-none sm:text-sm transition-colors ${passwordBorder}`}
                   value={formData.password}
                   onChange={handleChange}
                 />
@@ -164,7 +241,6 @@ const RegisterPage = () => {
                 </button>
               </div>
               
-              {/* If there is a hard error, show it. Otherwise show the strength meter */}
               {errors.password ? (
                 <p className="text-red-500 text-xs mt-1 font-bold">{errors.password}</p>
               ) : formData.password ? (
@@ -184,7 +260,6 @@ const RegisterPage = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
               />
-              {/* THE NEW ACTIVE ERROR MESSAGE */}
               {errors.confirmPassword && (
                 <p className="text-red-500 text-xs mt-1 font-bold">{errors.confirmPassword}</p>
               )}
@@ -192,7 +267,6 @@ const RegisterPage = () => {
           </div>
 
           <div>
-            {/* The button is ALIVE again! */}
             <button
               type="submit"
               className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-slate-900 bg-amber-500 hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition shadow"

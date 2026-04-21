@@ -1,24 +1,28 @@
 import axios from 'axios';
 
-// This is the "Base URL" - basically the phone number of the .NET backend.
-// We'll change this to the actual URL once he gives it to us!
-const API_BASE_URL = 'http://localhost:5000/api'; 
-
+// Create a central Axios instance
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: 'http://localhost:5000/api', // Make sure this matches your C# port!
   headers: {
-    'Content-Type': 'application/json',
-  },
+    'Content-Type': 'application/json'
+  }
 });
 
-// This "Interceptor" is like a stamp on an envelope.
-// It automatically adds your VIP Token (the one we saved in login) to every request!
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// ⚡ The Interceptor: Automatically attaches your token to every request
+api.interceptors.request.use(
+  (config) => {
+    // Check local storage for the token (make sure 'token' matches the exact key your AuthContext uses to save it)
+    const token = localStorage.getItem('token'); 
+    
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 export default api;

@@ -18,11 +18,11 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
-    const login = (userData) => {
+    const login = (userData, token) => { // ⬅️ NEW: Accept the real token
         setUser(userData);
-        // Save to the "drawer" so it survives a refresh
+        // Save both to the "drawer"
         localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('token', "abc.123.fake.token");
+        localStorage.setItem('token', token); // ⬅️ NEW: Save the REAL token, not the fake one
     };
 
     const logout = () => {
